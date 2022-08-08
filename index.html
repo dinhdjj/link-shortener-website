@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Link shorten website</title>
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css"
+        />
+    </head>
+    <body>
+        <main style="max-width: 400px">
+            <form id="form">
+                <div>
+                    <label for="url-input">Your URL</label>
+                    <input id="url-input" type="text" />
+                    <p id="url-error" style="color: red"></p>
+                </div>
+
+                <button>Shorten</button>
+
+                <br />
+
+                <div>
+                    <label for="shorted-url-input">Your result</label>
+                    <input id="shorted-url-input" type="text" />
+                    <button
+                        clipboard
+                        data-clipboard-action="copy"
+                        data-clipboard-target="#shorted-url-input"
+                    >
+                        Cut to clipboard
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js"></script>
+
+        <script src="./config.js"></script>
+
+        <script>
+            new ClipboardJS('[clipboard]');
+
+            const { BITLY_ACCESS_TOKEN } = getConfigs();
+
+            let form = document.getElementById('form');
+            let urlInput = document.getElementById('url-input');
+            let urlError = document.getElementById('url-error');
+            let shortedUrlInput = document.getElementById('shorted-url-input');
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                urlError.innerText = '';
+
+                let URL = urlInput.value;
+
+                if (!URL) {
+                    urlError.innerText = 'Please enter a URL';
+                    return;
+                }
+
+                const res = await fetch(
+                    'https://api-ssl.bitly.com/v4/shorten',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: 'Bearer ' + BITLY_ACCESS_TOKEN,
+                        },
+                        body: JSON.stringify({
+                            long_url: URL,
+                        }),
+                    }
+                );
+
+                const body = await res.json();
+                const status = res.status;
+
+                if (status > 299 || status < 200) {
+                    urlError.innerText = body.description;
+                    return;
+                }
+
+                shortedUrlInput.value = body.link;
+            });
+        </script>
+    </body>
+</html>
